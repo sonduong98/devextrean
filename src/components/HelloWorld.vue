@@ -1,58 +1,137 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div>
+    <DxTreeList
+      id="tasks"
+      :data-source="dataSource"
+      :show-borders="true"
+      :column-auto-width="true"
+      :word-wrap-enabled="true"
+      :expanded-row-keys="expandedRowKeys"
+      :selected-row-keys="selectedRowKeys"
+      key-expr="Task_ID"
+      parent-id-expr="Task_Parent_ID"
+    >
+      <DxSearchPanel :visible="true" :width="250" />
+      <DxHeaderFilter :visible="true" />
+      <DxSelection mode="multiple" />
+      <DxColumnChooser :enabled="true" />
+
+      <DxColumn :width="300" data-field="Task_Subject" />
+      <DxColumn
+        :allow-sorting="true"
+        :min-width="200"
+        data-field="Task_Assigned_Employee_ID"
+        caption="Assigned"
+        cell-template="employeeTemplate"
+      >
+        <DxLookup
+          :data-source="employees"
+          value-expr="ID"
+          display-expr="Name"
+        />
+      </DxColumn>
+      <DxColumn :min-width="100" data-field="Task_Status" caption="Status">
+        <DxLookup :data-source="statuses" />
+      </DxColumn>
+      <DxColumn :visible="false" data-field="Task_Priority" caption="Priority">
+        <DxLookup
+          :data-source="priorities"
+          value-expr="id"
+          display-expr="value"
+        />
+      </DxColumn>
+      <DxColumn
+        :min-width="100"
+        :customize-text="customizeTaskCompletionText"
+        :visible="false"
+        data-field="Task_Completion"
+        caption="% Completed"
+      />
+      <DxColumn
+        data-field="Task_Start_Date"
+        caption="Start Date"
+        data-type="date"
+      />
+      <DxColumn
+        data-field="Task_Due_Date"
+        caption="Due Date"
+        data-type="date"
+      ></DxColumn>
+      <DxTooltip
+        :close-on-outside-click="false"
+        target="#product2"
+        position="right"
+      >
+        tututut
+      </DxTooltip>
+    </DxTreeList>
   </div>
 </template>
-
 <script>
-export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
-  }
-}
-</script>
+import {
+  DxTreeList,
+  DxColumn,
+  DxColumnChooser,
+  DxHeaderFilter,
+  DxSearchPanel,
+  DxSelection,
+  DxLookup,
+} from "devextreme-vue/tree-list";
+import { DxTooltip } from "devextreme-vue/tooltip";
+import { tasks, employees, priorities } from "../data.js";
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
+const statuses = [
+  "Not Started",
+  "Need Assistance",
+  "In Progress",
+  "Deferred",
+  "Completed",
+];
+
+export default {
+  components: {
+    DxTreeList,
+    DxColumn,
+    DxColumnChooser,
+    DxHeaderFilter,
+    DxSearchPanel,
+    DxSelection,
+    DxLookup,
+    DxTooltip,
+  },
+  data() {
+    return {
+      expandedRowKeys: [1, 2],
+      selectedRowKeys: [1, 29, 42],
+      employees,
+      priorities,
+      statuses,
+    };
+  },
+  computed: {
+    dataSource() {
+      return tasks.map(function(task) {
+        employees.forEach(function(employee) {
+          if (task.Task_Assigned_Employee_ID === employee.ID) {
+            task.Task_Assigned_Employee = employee;
+          }
+        });
+        return task;
+      });
+    },
+  },
+  methods: {
+    customizeTaskCompletionText(cellInfo) {
+      return `${cellInfo.valueText}%`;
+    },
+  },
+};
+</script>
+<style>
+#tasks {
+  max-height: 540px;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+#tasks .dx-treelist-rowsview td {
+  vertical-align: middle;
 }
 </style>
